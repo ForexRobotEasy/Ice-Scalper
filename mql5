@@ -1,0 +1,93 @@
+
+//+------------------------------------------------------------------+
+//|                                                     Ice Scalper |
+//|                                        Developed by Forex Robot Easy Team |
+//|                                                     forexroboteasy.com |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//|                                    Global Variables and Constants |
+//+------------------------------------------------------------------+
+double previousHigh;  // stores the previous high price
+double previousLow;   // stores the previous low price
+int ticket;           // stores the ticket number of the pending order
+
+//+------------------------------------------------------------------+
+//|                                        Custom Functions for Ice Scalper |
+//+------------------------------------------------------------------+
+// Function to place pending buy order at the level of previous high
+void PlaceBuyOrder()
+{
+   double buyPrice = previousHigh;
+   ticket = OrderSend(Symbol(), OP_BUYSTOP, 0.01, buyPrice, 2, buyPrice - 5 * Point, buyPrice + 5 * Point, 'Ice Scalper', 0, 0, Green);
+}
+
+// Function to place pending sell order at the level of previous low
+void PlaceSellOrder()
+{
+   double sellPrice = previousLow;
+   ticket = OrderSend(Symbol(), OP_SELLSTOP, 0.01, sellPrice, 2, sellPrice + 5 * Point, sellPrice - 5 * Point, 'Ice Scalper', 0, 0, Red);
+}
+
+//+------------------------------------------------------------------+
+//|                                            Initialization Function |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   // Initialize previousHigh and previousLow variables
+   previousHigh = High[1];
+   previousLow = Low[1];
+
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//|                                               Deinitialization Function |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+   // Perform necessary cleanup actions before deinitialization
+}
+
+//+------------------------------------------------------------------+
+//|                                                      Start Function |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   // Check if the current price crosses the previous high
+   if (High[0] > previousHigh)
+   {
+      // Place pending buy order
+      PlaceBuyOrder();
+
+      // Update previousHigh variable
+      previousHigh = High[0];
+   }
+
+   // Check if the current price crosses the previous low
+   if (Low[0] < previousLow)
+   {
+      // Place pending sell order
+      PlaceSellOrder();
+
+      // Update previousLow variable
+      previousLow = Low[0];
+   }
+
+   // Check if any pending order is triggered
+   if (OrderSelect(ticket, SELECT_BY_TICKET))
+   {
+      // Check if the pending order is a buy order
+      if (OrderType() == OP_BUYSTOP)
+      {
+         // Close the buy order at market price
+         OrderClose(OrderTicket(), OrderLots(), Bid, 2, White);
+      }
+      // Check if the pending order is a sell order
+      else if (OrderType() == OP_SELLSTOP)
+      {
+         // Close the sell order at market price
+         OrderClose(OrderTicket(), OrderLots(), Ask, 2, White);
+      }
+   }
+}
